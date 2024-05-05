@@ -108,10 +108,16 @@ func checkAvailableDate(header http.Header) (string, error) {
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 
 	resp, err := client.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusUnauthorized {
+			return "", UnauthError{}
+		}
+		return "", errors.New(fmt.Sprintf("Error status code %v", resp.StatusCode))
+	}
 
 	var days []AppointmentDay
 	err = json.NewDecoder(resp.Body).Decode(&days)
@@ -135,6 +141,8 @@ func checkAvailableTime(header http.Header, date string) (string, error) {
 	}
 
 	req.Header = header
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -149,10 +157,10 @@ func checkAvailableTime(header http.Header, date string) (string, error) {
 	}
 
 	if len(times.BusinessTimes) > 0 {
-		return times.BusinessTimes[0], nil
+		return times.BusinessTimes[len(times.BusinessTimes)-1], nil
 	}
 	if len(times.AvailableTimes) > 0 {
-		return times.AvailableTimes[0], nil
+		return times.AvailableTimes[len(times.AvailableTimes)-1], nil
 	}
 
 	return "", nil
@@ -179,6 +187,7 @@ func book(header http.Header, date string, time string) error {
 	}
 
 	req.Header = header
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := client.Do(req)
 	if err != nil {

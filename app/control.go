@@ -1,8 +1,11 @@
 package app
 
 import (
+	"errors"
 	"log"
+	"math/rand"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -21,29 +24,52 @@ func Process() {
 	}
 
 	for {
-		date, err := checkAvailableDate(baseHeader.Clone())
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		if date == "" {
-			log.Println("No dates available")
-		} else if date > currentBookedDate {
-			log.Printf("Nearest date is further than already booked (%s vs %s)", currentBookedDate, date)
-		} else {
-			currentBookedDate = date
-			availableTime, err := checkAvailableTime(baseHeader.Clone(), date)
+		func(h *http.Header) {
+			date, err := checkAvailableDate(h.Clone())
 			if err != nil {
 				log.Println(err)
-				continue
+
+				// need to relog-in, have everything refreshed to login successfully
+				if errors.Is(err, UnauthError{}) {
+					Init()
+					client = &http.Client{}
+					err = login(client)
+					if err != nil {
+						log.Printf("Login failed: %v", err)
+					}
+				}
+				return
 			}
-			err = book(baseHeader.Clone(), date, availableTime)
-			if err != nil {
-				log.Println(err)
+
+			if date == "" {
+				log.Println("No dates available")
+			} else if date > currentBookedDate {
+				log.Printf("Nearest date is further than already booked (%s vs %s)", currentBookedDate, date)
 			} else {
-				log.Printf("Booked time at %s %s", date, availableTime)
+				log.Printf("Found data on %s", date)
+				currentBookedDate = date
+				availableTime, err := checkAvailableTime(h.Clone(), date)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				err = book(h.Clone(), date, availableTime)
+				if err != nil {
+					log.Println(err)
+				} else {
+					//
+					log.Printf("Booked time at %s %s", date, availableTime)
+					os.Exit(0)
+				}
 			}
-		}
-		time.Sleep(3 * time.Second)
+		}(baseHeader)
+
+		time.Sleep(
+			func() time.Duration {
+				numbers := []int{2, 3, 5, 7, 11, 13, 17, 19, 23, 29}
+				rand.Seed(time.Now().UnixNano())
+				randomIndex := rand.Intn(len(numbers))
+				return time.Duration(numbers[randomIndex]) * time.Second
+			}())
 	}
 }
