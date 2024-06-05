@@ -1,6 +1,6 @@
 package main
 
-import "us_visa/app"
+import "yufa/app"
 
 func main() {
 	app.Process()

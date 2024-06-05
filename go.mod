@@ -1,4 +1,4 @@
-module us_visa
+module yufa
 
 go 1.21
 

@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 )
 
@@ -221,7 +220,6 @@ func book(header *http.Header, date string, time string) error {
 
 	if strings.Contains(body, "Confirmation and Instructions") {
 		log.Printf("booked successfully on %s at %s", date, time)
-		os.Exit(0)
 	}
 
 	return nil

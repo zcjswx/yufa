@@ -66,7 +66,7 @@ func Process() {
 
 		time.Sleep(
 			func() time.Duration {
-				numbers := []int{2, 3, 5, 7, 11, 13, 17, 19, 23, 29}
+				numbers := []int{11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47}
 				rand.Seed(time.Now().UnixNano())
 				randomIndex := rand.Intn(len(numbers))
 				return time.Duration(numbers[randomIndex]) * time.Second
