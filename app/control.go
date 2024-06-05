@@ -53,7 +53,7 @@ func Process() {
 					log.Println(err)
 					return
 				}
-				err = book(h.Clone(), date, availableTime)
+				err = book(h, date, availableTime)
 				if err != nil {
 					log.Println(err)
 				} else {

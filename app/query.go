@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 )
 
@@ -166,37 +168,60 @@ func checkAvailableTime(header http.Header, date string) (string, error) {
 	return "", nil
 }
 
-func book(header http.Header, date string, time string) error {
+func findToken(header *http.Header) string {
+	apiURL := fmt.Sprintf("%s/schedule/%s/appointment", baseURI, scheduleID)
+	req, _ := http.NewRequest("GET", apiURL, nil)
+	req.Header = header.Clone()
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+	}
+	defer resp.Body.Close()
+	header.Set("Cookie", getCookieBody(extractRelevantCookie(resp.Header.Get("Set-Cookie"))))
+	return getAuthenticityToken(resp.Body)
+
+}
+
+func book(header *http.Header, date string, time string) error {
 	client := &http.Client{}
 	apiURL := fmt.Sprintf("%s/schedule/%s/appointment", baseURI, scheduleID)
+	token := findToken(header)
 	data := url.Values{}
-	data.Set("utf8", "✓")
-	data.Set("authenticity_token", header.Get("X-CSRF-Token"))
+	//data.Set("utf8", "✓")
+	data.Set("authenticity_token", token)
 	data.Set("confirmed_limit_message", "1")
 	data.Set("use_consulate_appointment_capacity", "true")
 	data.Set("appointments[consulate_appointment][facility_id]", facilityID)
 	data.Set("appointments[consulate_appointment][date]", date)
 	data.Set("appointments[consulate_appointment][time]", time)
-	data.Set("appointments[asc_appointment][facility_id]", "")
-	data.Set("appointments[asc_appointment][date]", "")
-	data.Set("appointments[asc_appointment][time]", "")
 
 	req, err := http.NewRequest("POST", apiURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return err
 	}
 
-	req.Header = header
+	req.Header = header.Clone()
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Referer", apiURL)
 
 	resp, err := client.Do(req)
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	body := string(bodyBytes)
+
 	if err != nil {
+		log.Printf("status code: %v", resp.StatusCode)
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("status code: %v", resp.StatusCode)
 		return errors.New("failed to book appointment")
+	}
+
+	if strings.Contains(body, "Confirmation and Instructions") {
+		log.Printf("booked successfully on %s at %s", date, time)
+		os.Exit(0)
 	}
 
 	return nil
