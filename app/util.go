@@ -3,7 +3,6 @@ package app
 import (
 	"golang.org/x/net/html"
 	"io"
-	"log"
 	"strings"
 )
 
@@ -64,7 +63,7 @@ func getAuthenticityToken(body io.Reader) string {
 			}
 		}
 	} else {
-		log.Printf("authenticity_token not found")
+		logger.Error("authenticity_token not found")
 	}
 	return ""
 }

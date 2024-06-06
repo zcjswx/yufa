@@ -6,13 +6,35 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
-var baseHeader *http.Header
+/*		POST	https://ais.usvisa-info.com/en-ca/niv/users/sign_in		->	200
+==>		GET		https://ais.usvisa-info.com/en-ca/niv/account			->	302
+==>		GET		https://ais.usvisa-info.com/en-ca/niv/groups/[8nums]	->	200
+		--> BODY part `to extract
+				1. Schedule ID
+				2. Appointment date
+			************************************************
+                                    <div class='card'>
+                                        <p class='consular-appt'>
+                                            <strong>
+                                                Consular Appointment<span>&#58;</span>
+                                            </strong>
+                                            1 October, 2026, 10:45 Toronto local time at Toronto
+ &mdash;
+                                            <a href="/en-ca/niv/schedule/[scheduleID]/addresses/consulate">
+                                                <span class='fas fa-map-marker-alt'></span>
+                                                get directions
+
+                                            </a>
+                                        </p>`
+									</div>
+		************************************************
+
+*/
 
 type AppointmentDay struct {
 	Date string `json:"date"`
@@ -23,29 +45,14 @@ type AppointmentTime struct {
 	AvailableTimes []string `json:"available_times"`
 }
 
-type HttpClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
-func Init() {
-	baseHeader = &http.Header{}
-	baseHeader.Set("User-Agent", userAgent)
-	baseHeader.Set("Accept-Encoding", "gzip, deflate, br")
-	baseHeader.Set("Connection", "keep-alive")
-	baseHeader.Set("Cache-Control", "no-cache")
-	baseHeader.Set("Referer", baseURI)
-	baseHeader.Set("Referrer-Policy", "strict-origin-when-cross-origin")
-	baseHeader.Set("Accept", "*/*")
-}
-
-func login(client HttpClient) error {
-	log.Println("Logging in")
+func login(client *MyClient) error {
+	logger.Info("Log in")
 	signInURL := fmt.Sprintf("%s/users/sign_in", baseURI)
 	loginReq, err := http.NewRequest("GET", signInURL, nil)
 	if err != nil {
 		return err
 	}
-	loginReq.Header = baseHeader.Clone()
+	loginReq.Header = client.Header.Clone()
 	initialResp, err := client.Do(loginReq)
 	if err != nil {
 		return err
@@ -74,11 +81,10 @@ func login(client HttpClient) error {
 		return err
 	}
 
-	baseHeader.Set("X-CSRF-Token", csrfToken)
+	client.Header.Set("X-CSRF-Token", csrfToken)
 
-	loginReq.Header = baseHeader.Clone()
+	loginReq.Header = client.Header.Clone()
 	loginReq.Header.Set("Content-Type", contentType)
-	loginReq.Header.Set("Cookie", getCookieBody(extractRelevantCookie(initialResp.Header.Get("Set-Cookie"))))
 
 	resp, err := client.Do(loginReq)
 	if err != nil {
@@ -87,16 +93,14 @@ func login(client HttpClient) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		log.Printf("status code %v", resp.StatusCode)
+		logger.Errorf("status code %v", resp.StatusCode)
 	}
 
-	cookies := getCookieBody(extractRelevantCookie(resp.Header.Get("Set-Cookie")))
-	baseHeader.Set("Cookie", cookies)
 	return nil
 }
 
 func checkAvailableDate(header http.Header) (string, error) {
-	client := &http.Client{}
+	client := GetClient()
 	url := fmt.Sprintf("%s/schedule/%s/appointment/days/%s.json?appointments[expedite]=false", baseURI, scheduleID, facilityID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -134,7 +138,7 @@ func checkAvailableDate(header http.Header) (string, error) {
 }
 
 func checkAvailableTime(header http.Header, date string) (string, error) {
-	client := &http.Client{}
+	client := GetClient()
 	url := fmt.Sprintf("%s/schedule/%s/appointment/times/%s.json?date=%s&appointments[expedite]=false", baseURI, scheduleID, facilityID, date)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -171,18 +175,17 @@ func findToken(header *http.Header) string {
 	apiURL := fmt.Sprintf("%s/schedule/%s/appointment", baseURI, scheduleID)
 	req, _ := http.NewRequest("GET", apiURL, nil)
 	req.Header = header.Clone()
-	client := &http.Client{}
+	client := GetClient()
 	resp, err := client.Do(req)
 	if err != nil {
 	}
 	defer resp.Body.Close()
-	header.Set("Cookie", getCookieBody(extractRelevantCookie(resp.Header.Get("Set-Cookie"))))
 	return getAuthenticityToken(resp.Body)
 
 }
 
 func book(header *http.Header, date string, time string) error {
-	client := &http.Client{}
+	client := GetClient()
 	apiURL := fmt.Sprintf("%s/schedule/%s/appointment", baseURI, scheduleID)
 	token := findToken(header)
 	data := url.Values{}
@@ -208,18 +211,18 @@ func book(header *http.Header, date string, time string) error {
 	body := string(bodyBytes)
 
 	if err != nil {
-		log.Printf("status code: %v", resp.StatusCode)
+		logger.Errorf("status code: %v", resp.StatusCode)
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("status code: %v", resp.StatusCode)
+		logger.Errorf("status code: %v", resp.StatusCode)
 		return errors.New("failed to book appointment")
 	}
 
 	if strings.Contains(body, "Confirmation and Instructions") {
-		log.Printf("booked successfully on %s at %s", date, time)
+		logger.Infof("booked successfully on %s at %s", date, time)
 	}
 
 	return nil
