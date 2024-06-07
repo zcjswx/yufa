@@ -10,14 +10,15 @@ var (
 )
 
 type Config struct {
-	Username          string `yaml:"username"`
-	Password          string `yaml:"password"`
-	ScheduleID        string `yaml:"schedule_id"`
-	FacilityID        string `yaml:"facility_id"`
-	BaseURI           string `yaml:"base_uri"`
-	UserAgent         string `yaml:"user_agent"`
-	ContentType       string `yaml:"content_type"`
-	CurrentBookedDate string `yaml:"current_booked_date"`
+	Username          string   `yaml:"username"`
+	Password          string   `yaml:"password"`
+	ScheduleID        string   `yaml:"schedule_id"`
+	FacilityID        string   `yaml:"facility_id"`
+	FacilityIDList    []CityID `yaml:"facility_id_list"`
+	BaseURI           string   `yaml:"base_uri"`
+	UserAgent         string   `yaml:"user_agent"`
+	ContentType       string   `yaml:"content_type"`
+	CurrentBookedDate string   `yaml:"current_booked_date"`
 }
 
 func readConfig(filename string) (*Config, error) {

@@ -2,11 +2,19 @@ package app
 
 import (
 	"errors"
-	"math/rand"
 	"net/http"
 	"os"
 	"time"
 )
+
+/*
+	1. user log in
+	2. check available date in multiple cities in a DateManager():
+		-> DataWorker(ctx, Ottawa)
+		-> DataWorker(ctx, Montreal)
+		-> DataWorker(ctx, Toronto)
+	3. if no date find run #2, else, stop all workers, and do book()
+*/
 
 func Process() {
 	config, err := readConfig("config.yaml")
@@ -16,6 +24,8 @@ func Process() {
 	setupConfig(config)
 	logger.Infof("Initializing with current date %s", currentBookedDate)
 	client := GetClient()
+	user := NewUser(*config)
+	user.client = client
 	err = login(client)
 	if err != nil {
 		logger.Fatalf("Login failed: %v", err)
@@ -61,12 +71,6 @@ func Process() {
 			}
 		}(client.Header)
 
-		time.Sleep(
-			func() time.Duration {
-				numbers := []int{11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47}
-				rand.Seed(time.Now().UnixNano())
-				randomIndex := rand.Intn(len(numbers))
-				return time.Duration(numbers[randomIndex]) * time.Second
-			}())
+		time.Sleep(GetRandSecond())
 	}
 }

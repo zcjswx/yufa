@@ -11,3 +11,18 @@ const (
 	Toronto    CityID = 94
 	Vancouver  CityID = 95
 )
+
+var cityNames = map[CityID]string{
+	Calgary:    "Calgary",
+	Halifax:    "Halifax",
+	Montreal:   "Montreal",
+	Ottawa:     "Ottawa",
+	QuebecCity: "Quebec City",
+	Toronto:    "Toronto",
+	Vancouver:  "Vancouver",
+}
+
+func GetCityName(id CityID) (string, bool) {
+	name, ok := cityNames[id]
+	return name, ok
+}

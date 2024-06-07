@@ -3,7 +3,9 @@ package app
 import (
 	"golang.org/x/net/html"
 	"io"
+	"math/rand"
 	"strings"
+	"time"
 )
 
 func extractCSRFToken(html string) string {
@@ -66,4 +68,11 @@ func getAuthenticityToken(body io.Reader) string {
 		logger.Error("authenticity_token not found")
 	}
 	return ""
+}
+
+func GetRandSecond() time.Duration {
+	numbers := []int{11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47}
+	rand.Seed(time.Now().UnixNano())
+	randomIndex := rand.Intn(len(numbers))
+	return time.Duration(numbers[randomIndex]) * time.Second
 }
