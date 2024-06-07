@@ -121,6 +121,12 @@ func checkAvailableDate(header http.Header) (string, error) {
 		if resp.StatusCode == http.StatusUnauthorized {
 			return "", UnauthError{}
 		}
+
+		// Request redirected to log in page, and get 404, cookie expires every 4 hours
+		// Todo log in before cookie expires
+		if resp.StatusCode == http.StatusNotFound {
+			return "", UnauthError{}
+		}
 		return "", errors.New(fmt.Sprintf("Error status code %v", resp.StatusCode))
 	}
 
