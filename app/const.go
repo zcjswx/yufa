@@ -22,7 +22,10 @@ var cityNames = map[CityID]string{
 	Vancouver:  "Vancouver",
 }
 
-func GetCityName(id CityID) (string, bool) {
+func GetCityName(id CityID) string {
 	name, ok := cityNames[id]
-	return name, ok
+	if !ok {
+		return "City ID Not Found"
+	}
+	return name
 }

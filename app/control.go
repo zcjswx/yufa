@@ -7,15 +7,6 @@ import (
 	"time"
 )
 
-/*
-	1. user log in
-	2. check available date in multiple cities in a DateManager():
-		-> DataWorker(ctx, Ottawa)
-		-> DataWorker(ctx, Montreal)
-		-> DataWorker(ctx, Toronto)
-	3. if no date find run #2, else, stop all workers, and do book()
-*/
-
 func Process() {
 	config, err := readConfig("config.yaml")
 	if err != nil {
@@ -73,4 +64,22 @@ func Process() {
 
 		time.Sleep(GetRandSecond())
 	}
+}
+
+func Con() {
+	config, err := readConfig("config.yaml")
+	if err != nil {
+		logger.Fatal(err)
+	}
+	setupConfig(config)
+	logger.Infof("Initializing with current date %s", currentBookedDate)
+	client := GetClient()
+	user := NewUser(*config)
+	user.client = client
+
+	err = user.login()
+	if err != nil {
+		logger.Fatalf("Login failed: %v", err)
+	}
+	user.dateCheckingManager()
 }

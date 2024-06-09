@@ -6,7 +6,16 @@ import (
 )
 
 var (
-	username, password, scheduleID, facilityID, baseURI, userAgent, contentType, currentBookedDate string
+	// deprecated
+	username,
+	password,
+	scheduleID,
+	facilityID,
+	baseURI,
+	userAgent,
+	contentType,
+	currentBookedDate string
+	config *Config
 )
 
 type Config struct {
@@ -32,10 +41,12 @@ func readConfig(filename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	config = &cfg
 
 	return &cfg, nil
 }
 
+// deprecated
 func setupConfig(config *Config) {
 	username = config.Username
 	password = config.Password
@@ -45,4 +56,11 @@ func setupConfig(config *Config) {
 	userAgent = config.UserAgent
 	contentType = config.ContentType
 	currentBookedDate = config.CurrentBookedDate
+}
+
+func GetConfig() Config {
+	if config == nil {
+		logger.Fatalf("config is empty")
+	}
+	return *config
 }

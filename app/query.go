@@ -113,10 +113,11 @@ func checkAvailableDate(header http.Header) (string, error) {
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusUnauthorized {
 			return "", UnauthError{}
