@@ -63,7 +63,6 @@ func (u *User) dateCheckingManager() {
 
 	for _, facilityID := range u.FacilityIDList {
 		go u.dateCheckingWorker(ctx, cancel, outChan, facilityID)
-		time.Sleep(GetRandSecond())
 	}
 
 	param := <-outChan
@@ -100,14 +99,7 @@ func (u *User) dateCheckingWorker(ctx context.Context, cancel context.CancelFunc
 				continue
 			}
 
-			// 504 error happens when 2 requests sent within 1s, lock and sleep 1s to avoid.
-			date, err := func(facilityID CityID) (string, error) {
-				u.mu.Lock()
-				defer u.mu.Unlock()
-				date, err := u.getAvailableDate(facilityID)
-				time.Sleep(time.Second)
-				return date, err
-			}(facilityID)
+			date, err := u.getAvailableDate(facilityID)
 
 			if err != nil {
 				logger.Error(err)

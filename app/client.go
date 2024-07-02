@@ -2,6 +2,8 @@ package app
 
 import (
 	"net/http"
+	"sync"
+	"time"
 )
 
 /*
@@ -15,6 +17,7 @@ type HttpClient interface {
 }
 
 type MyClient struct {
+	mu sync.Mutex
 	*http.Client
 	*http.Header
 }
@@ -28,6 +31,7 @@ func GetClient() *MyClient {
 
 func NewClient() *MyClient {
 	c := &MyClient{
+		sync.Mutex{},
 		&http.Client{},
 		NewHeader(),
 	}
@@ -48,10 +52,15 @@ func NewHeader() *http.Header {
 }
 
 func (c *MyClient) Do(req *http.Request) (*http.Response, error) {
+
+	// 504 error happens when 2 requests sent within 1s, lock and sleep 1s to avoid.
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	resp, err := c.Client.Do(req)
 	if err != nil {
 		return resp, err
 	}
+	time.Sleep(time.Second)
 
 	if cookies := resp.Header.Values("Set-Cookie"); len(cookies) > 0 {
 		logger.Debug("Set-Cookie Header Found:", cookies)
