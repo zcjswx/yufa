@@ -10,6 +10,9 @@ const (
 	QuebecCity CityID = 93
 	Toronto    CityID = 94
 	Vancouver  CityID = 95
+
+	UrlAppointmentSuffix string = "%s/schedule/%s/appointment"
+	UrlSignIn            string = "%s/users/sign_in"
 )
 
 var cityNames = map[CityID]string{
