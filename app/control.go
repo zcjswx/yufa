@@ -71,12 +71,11 @@ func Con() {
 	if err != nil {
 		logger.Fatal(err)
 	}
-	setupConfig(config)
-	logger.Infof("Initializing with current date %s", currentBookedDate)
+
 	client := GetClient()
 	user := NewUser(*config)
 	user.client = client
-
+	logger.Infof("Initializing with current date %s", user.CurrentBookedDate)
 	err = user.login()
 	if err != nil {
 		logger.Fatalf("Login failed: %v", err)

@@ -160,8 +160,8 @@ func (u *User) login() error {
 
 	data := url.Values{}
 	data.Set("utf8", "✓")
-	data.Set("user[email]", username)
-	data.Set("user[password]", password)
+	data.Set("user[email]", u.Username)
+	data.Set("user[password]", u.Password)
 	data.Set("policy_confirmed", "1")
 	data.Set("commit", "Acessar")
 
@@ -173,7 +173,7 @@ func (u *User) login() error {
 	u.client.Header.Set("X-CSRF-Token", csrfToken)
 
 	loginReq.Header = u.client.Header.Clone()
-	loginReq.Header.Set("Content-Type", contentType)
+	loginReq.Header.Set("Content-Type", GetConfig().ContentType)
 
 	resp, err := u.client.Do(loginReq)
 	if err != nil {

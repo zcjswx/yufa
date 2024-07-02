@@ -37,11 +37,11 @@ func NewClient() *MyClient {
 
 func NewHeader() *http.Header {
 	header := &http.Header{}
-	header.Set("User-Agent", userAgent)
+	header.Set("User-Agent", GetConfig().UserAgent)
 	header.Set("Accept-Encoding", "gzip, deflate, br")
 	header.Set("Connection", "keep-alive")
 	header.Set("Cache-Control", "no-cache")
-	header.Set("Referer", baseURI)
+	header.Set("Referer", GetConfig().BaseURI)
 	header.Set("Referrer-Policy", "strict-origin-when-cross-origin")
 	header.Set("Accept", "*/*")
 	return header
