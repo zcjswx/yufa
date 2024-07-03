@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -35,6 +34,7 @@ type User struct {
 	FacilityIDList    []CityID
 	CurrentBookedDate string
 	client            *MyClient
+	bookParam         *BookParam
 }
 
 func NewUser(config Config) *User {
@@ -66,14 +66,7 @@ func (u *User) dateCheckingManager() {
 	}
 
 	param := <-outChan
-
-	err := u.book(*param)
-	if err != nil {
-		logger.Error(err)
-	} else {
-		logger.Infof("Booked time at %s on %s at %s", GetCityName(param.FacilityID), param.Date, param.Time)
-	}
-	os.Exit(0)
+	u.bookParam = param
 }
 
 func (u *User) dateCheckingWorker(ctx context.Context, cancel context.CancelFunc, outChan chan *BookParam, facilityID CityID) {
