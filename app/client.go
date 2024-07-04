@@ -3,7 +3,6 @@ package app
 import (
 	"net/http"
 	"sync"
-	"time"
 )
 
 /*
@@ -51,6 +50,7 @@ func NewHeader() *http.Header {
 	return header
 }
 
+// Do No concurrency allowed. Requests sending within 1s will get 504 error.
 func (c *MyClient) Do(req *http.Request) (*http.Response, error) {
 
 	// 504 error happens when 2 requests sent within 1s, lock and sleep 1s to avoid.
@@ -60,7 +60,6 @@ func (c *MyClient) Do(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return resp, err
 	}
-	time.Sleep(time.Second)
 
 	if cookies := resp.Header.Values("Set-Cookie"); len(cookies) > 0 {
 		logger.Debug("Set-Cookie Header Found:", cookies)
