@@ -9,9 +9,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -27,12 +27,14 @@ import (
 var user *User
 
 type User struct {
+	mu                sync.Mutex
 	Username          string
 	Password          string
 	ScheduleID        string
 	FacilityIDList    []CityID
 	CurrentBookedDate string
 	client            *MyClient
+	bookParam         *BookParam
 }
 
 func NewUser(config Config) *User {
@@ -61,18 +63,10 @@ func (u *User) dateCheckingManager() {
 
 	for _, facilityID := range u.FacilityIDList {
 		go u.dateCheckingWorker(ctx, cancel, outChan, facilityID)
-		time.Sleep(GetRandSecond())
 	}
 
 	param := <-outChan
-
-	err := u.book(*param)
-	if err != nil {
-		logger.Error(err)
-	} else {
-		logger.Infof("Booked time at %s on %s at %s", GetCityName(param.FacilityID), param.Date, param.Time)
-	}
-	os.Exit(0)
+	u.bookParam = param
 }
 
 func (u *User) dateCheckingWorker(ctx context.Context, cancel context.CancelFunc, outChan chan *BookParam, facilityID CityID) {
@@ -83,6 +77,7 @@ func (u *User) dateCheckingWorker(ctx context.Context, cancel context.CancelFunc
 			return
 		default:
 
+			// To avoid frequent 502 error, error normally happens at 5,10,15,20... minutes.
 			checkTimeToSkip := func() bool {
 				_, minutes, _ := time.Now().Clock()
 				if minutes%5 != 0 {
@@ -98,6 +93,7 @@ func (u *User) dateCheckingWorker(ctx context.Context, cancel context.CancelFunc
 			}
 
 			date, err := u.getAvailableDate(facilityID)
+
 			if err != nil {
 				logger.Error(err)
 
@@ -136,8 +132,8 @@ func (u *User) dateCheckingWorker(ctx context.Context, cancel context.CancelFunc
 
 func (u *User) login() error {
 	logger.Info("Log in")
-	signInURL := fmt.Sprintf("%s/users/sign_in", GetConfig().BaseURI)
-	loginReq, err := http.NewRequest("GET", signInURL, nil)
+	signInURL := fmt.Sprintf(UrlSignIn, GetConfig().BaseURI)
+	loginReq, err := http.NewRequest(http.MethodGet, signInURL, nil)
 	if err != nil {
 		return err
 	}
@@ -160,12 +156,12 @@ func (u *User) login() error {
 
 	data := url.Values{}
 	data.Set("utf8", "✓")
-	data.Set("user[email]", username)
-	data.Set("user[password]", password)
+	data.Set("user[email]", u.Username)
+	data.Set("user[password]", u.Password)
 	data.Set("policy_confirmed", "1")
 	data.Set("commit", "Acessar")
 
-	loginReq, err = http.NewRequest("POST", signInURL, strings.NewReader(data.Encode()))
+	loginReq, err = http.NewRequest(http.MethodPost, signInURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return err
 	}
@@ -173,7 +169,7 @@ func (u *User) login() error {
 	u.client.Header.Set("X-CSRF-Token", csrfToken)
 
 	loginReq.Header = u.client.Header.Clone()
-	loginReq.Header.Set("Content-Type", contentType)
+	loginReq.Header.Set("Content-Type", GetConfig().ContentType)
 
 	resp, err := u.client.Do(loginReq)
 	if err != nil {
@@ -191,7 +187,7 @@ func (u *User) login() error {
 func (u *User) getAvailableDate(facilityID CityID) (string, error) {
 
 	url := fmt.Sprintf("%s/schedule/%s/appointment/days/%v.json?appointments[expedite]=false", GetConfig().BaseURI, u.ScheduleID, facilityID)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return "", err
 	}
@@ -235,7 +231,7 @@ func (u *User) getAvailableDate(facilityID CityID) (string, error) {
 
 func (u *User) getAvailableTime(date string, facilityID CityID) (string, error) {
 	url := fmt.Sprintf("%s/schedule/%s/appointment/times/%v.json?date=%s&appointments[expedite]=false", GetConfig().BaseURI, u.ScheduleID, facilityID, date)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return "", err
 	}
@@ -267,7 +263,7 @@ func (u *User) getAvailableTime(date string, facilityID CityID) (string, error) 
 }
 
 func (u *User) book(param BookParam) error {
-	apiURL := fmt.Sprintf("%s/schedule/%s/appointment", GetConfig().BaseURI, u.ScheduleID)
+	apiURL := fmt.Sprintf(UrlAppointmentSuffix, GetConfig().BaseURI, u.ScheduleID)
 	token := findToken(u.client.Header)
 	data := url.Values{}
 	//data.Set("utf8", "✓")
@@ -278,7 +274,7 @@ func (u *User) book(param BookParam) error {
 	data.Set("appointments[consulate_appointment][date]", param.Date)
 	data.Set("appointments[consulate_appointment][time]", param.Time)
 
-	req, err := http.NewRequest("POST", apiURL, strings.NewReader(data.Encode()))
+	req, err := http.NewRequest(http.MethodPost, apiURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return err
 	}
@@ -310,8 +306,8 @@ func (u *User) book(param BookParam) error {
 }
 
 func (u *User) findToken(header *http.Header) string {
-	apiURL := fmt.Sprintf("%s/schedule/%s/appointment", GetConfig().BaseURI, GetConfig().ScheduleID)
-	req, _ := http.NewRequest("GET", apiURL, nil)
+	apiURL := fmt.Sprintf(UrlAppointmentSuffix, GetConfig().BaseURI, GetConfig().ScheduleID)
+	req, _ := http.NewRequest(http.MethodGet, apiURL, nil)
 	req.Header = header.Clone()
 
 	resp, err := u.client.Do(req)

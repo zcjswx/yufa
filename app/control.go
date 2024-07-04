@@ -71,15 +71,22 @@ func Con() {
 	if err != nil {
 		logger.Fatal(err)
 	}
-	setupConfig(config)
-	logger.Infof("Initializing with current date %s", currentBookedDate)
+
 	client := GetClient()
 	user := NewUser(*config)
 	user.client = client
-
+	logger.Infof("Initializing with current date %s", user.CurrentBookedDate)
 	err = user.login()
 	if err != nil {
 		logger.Fatalf("Login failed: %v", err)
 	}
 	user.dateCheckingManager()
+
+	err = user.book(*user.bookParam)
+	if err != nil {
+		logger.Error(err)
+	} else {
+		logger.Infof("Booked time at %s on %s at %s", GetCityName(user.bookParam.FacilityID), user.bookParam.Date, user.bookParam.Time)
+	}
+	os.Exit(0)
 }

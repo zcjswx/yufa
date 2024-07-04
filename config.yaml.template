@@ -4,6 +4,8 @@ schedule_id: "your_schedule_id"
 facility_id: "your_facility_id"
 current_booked_date: "2026-01-01"
 
+facility_id_list: [ 91, 92 ]
+
 # Const
 base_uri: "https://ais.usvisa-info.com/en-ca/niv"
 user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
