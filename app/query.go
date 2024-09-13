@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -59,7 +58,7 @@ func login(client *MyClient) error {
 	}
 	defer initialResp.Body.Close()
 
-	body, err := ioutil.ReadAll(initialResp.Body)
+	body, err := io.ReadAll(initialResp.Body)
 	if err != nil {
 		return err
 	}
@@ -185,6 +184,7 @@ func findToken(header *http.Header) string {
 	client := GetClient()
 	resp, err := client.Do(req)
 	if err != nil {
+		logger.Errorf("status code: %v", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 	return getAuthenticityToken(resp.Body)

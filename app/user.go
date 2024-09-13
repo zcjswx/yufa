@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -140,7 +139,7 @@ func (u *User) login() error {
 	}
 	defer initialResp.Body.Close()
 
-	body, err := ioutil.ReadAll(initialResp.Body)
+	body, err := io.ReadAll(initialResp.Body)
 	if err != nil {
 		return err
 	}
@@ -181,7 +180,6 @@ func (u *User) login() error {
 }
 
 func (u *User) getAvailableDate(facilityID CityID) (string, error) {
-
 	url := fmt.Sprintf("%s/schedule/%s/appointment/days/%v.json?appointments[expedite]=false", GetConfig().BaseURI, u.ScheduleID, facilityID)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
