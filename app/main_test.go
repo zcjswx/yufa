@@ -16,7 +16,10 @@ func Test_login(t *testing.T) {
 	defer server.Close()
 
 	baseURI = server.URL // Redirect to our mock server
-	client := server.Client()
+	client := &MyClient{
+		Header: &http.Header{},
+		Client: server.Client(),
+	}
 
 	err := login(client)
 	if err != nil {
