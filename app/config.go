@@ -1,8 +1,9 @@
 package app
 
 import (
-	"gopkg.in/yaml.v3"
 	"io/ioutil"
+
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -12,7 +13,6 @@ var (
 	scheduleID,
 	facilityID,
 	baseURI,
-	userAgent,
 	contentType,
 	currentBookedDate string
 	config *Config
@@ -53,7 +53,6 @@ func setupConfig(config *Config) {
 	scheduleID = config.ScheduleID
 	facilityID = config.FacilityID
 	baseURI = config.BaseURI
-	userAgent = config.UserAgent
 	contentType = config.ContentType
 	currentBookedDate = config.CurrentBookedDate
 }

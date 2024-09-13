@@ -128,7 +128,7 @@ func checkAvailableDate(header http.Header) (string, error) {
 		if resp.StatusCode == http.StatusNotFound {
 			return "", UnauthError{}
 		}
-		return "", errors.New(fmt.Sprintf("Error status code %v", resp.StatusCode))
+		return "", fmt.Errorf("Error status code %v", resp.StatusCode)
 	}
 
 	var days []AppointmentDay
@@ -188,7 +188,6 @@ func findToken(header *http.Header) string {
 	}
 	defer resp.Body.Close()
 	return getAuthenticityToken(resp.Body)
-
 }
 
 func book(header *http.Header, date string, time string) error {

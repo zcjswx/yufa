@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -27,7 +26,6 @@ import (
 var user *User
 
 type User struct {
-	mu                sync.Mutex
 	Username          string
 	Password          string
 	ScheduleID        string
@@ -56,7 +54,6 @@ type BookParam struct {
 }
 
 func (u *User) dateCheckingManager() {
-
 	outChan := make(chan *BookParam)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -70,7 +67,6 @@ func (u *User) dateCheckingManager() {
 }
 
 func (u *User) dateCheckingWorker(ctx context.Context, cancel context.CancelFunc, outChan chan *BookParam, facilityID CityID) {
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -213,7 +209,7 @@ func (u *User) getAvailableDate(facilityID CityID) (string, error) {
 		if resp.StatusCode == http.StatusNotFound {
 			return "", UnauthError{}
 		}
-		return "", errors.New(fmt.Sprintf("Error status code %v", resp.StatusCode))
+		return "", fmt.Errorf("Error status code %v", resp.StatusCode)
 	}
 
 	var days []AppointmentDay
@@ -305,15 +301,15 @@ func (u *User) book(param BookParam) error {
 	return nil
 }
 
-func (u *User) findToken(header *http.Header) string {
-	apiURL := fmt.Sprintf(UrlAppointmentSuffix, GetConfig().BaseURI, GetConfig().ScheduleID)
-	req, _ := http.NewRequest(http.MethodGet, apiURL, nil)
-	req.Header = header.Clone()
+// func (u *User) findToken(header *http.Header) string {
+// 	apiURL := fmt.Sprintf(UrlAppointmentSuffix, GetConfig().BaseURI, GetConfig().ScheduleID)
+// 	req, _ := http.NewRequest(http.MethodGet, apiURL, nil)
+// 	req.Header = header.Clone()
 
-	resp, err := u.client.Do(req)
-	if err != nil {
-	}
-	defer resp.Body.Close()
-	return getAuthenticityToken(resp.Body)
+// 	resp, err := u.client.Do(req)
+// 	if err != nil {
+// 	}
+// 	defer resp.Body.Close()
+// 	return getAuthenticityToken(resp.Body)
 
-}
+// }

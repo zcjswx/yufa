@@ -1,0 +1,45 @@
+linters:
+  enable:
+    - errcheck
+    - errorlint
+    - gocritic
+    - gofumpt
+    - goimports
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - staticcheck
+    - testifylint
+    - unparam
+    - unused
+    - whitespace 
+linters-settings:
+  gocritic:
+    disabled-checks:
+      - appendAssign
+      - assignOp  # Keep it disabled for readability
+      - badCond
+      - commentFormatting
+      - exitAfterDefer
+      - ifElseChain
+      - mapKey
+      - singleCaseSwitch
+      - typeSwitchVar
+  testifylint:
+    enable-all: true
+    disable:
+      - go-require
+  errcheck:
+    ignore: fmt:.*,io/ioutil:^Read.*
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosimple
+        - staticcheck
+        - unused
+
+# You can keep any existing configurations below this line

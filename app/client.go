@@ -52,7 +52,6 @@ func NewHeader() *http.Header {
 
 // Do No concurrency allowed. Requests sending within 1s will get 504 error.
 func (c *MyClient) Do(req *http.Request) (*http.Response, error) {
-
 	// 504 error happens when 2 requests sent within 1s, lock and sleep 1s to avoid.
 	c.mu.Lock()
 	defer c.mu.Unlock()

@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -13,7 +15,11 @@ func init() {
 	ecfg.EncodeTime = zapcore.ISO8601TimeEncoder
 	cfg.EncoderConfig = ecfg
 	l, _ := cfg.Build()
-	defer l.Sync() // flushes buffer, if any
+	defer func() {
+		if err := l.Sync(); err != nil {
+			fmt.Printf("Failed to sync logger: %v\n", err)
+		}
+	}()
 	sugar := l.Sugar()
 	logger = sugar
 }

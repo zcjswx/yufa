@@ -1,11 +1,12 @@
 package app
 
 import (
-	"golang.org/x/net/html"
 	"io"
 	"math/rand"
 	"strings"
 	"time"
+
+	"golang.org/x/net/html"
 )
 
 func extractCSRFToken(html string) string {
@@ -72,7 +73,9 @@ func getAuthenticityToken(body io.Reader) string {
 
 func GetRandSecond() time.Duration {
 	numbers := []int{11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47}
-	rand.Seed(time.Now().UnixNano())
+	// Remove rand.Seed(time.Now().UnixNano())
+	// If you need a local random generator, use:
+	// localRand := rand.New(rand.NewSource(time.Now().UnixNano()))
 	randomIndex := rand.Intn(len(numbers))
 	return time.Duration(numbers[randomIndex]) * time.Second
 }
